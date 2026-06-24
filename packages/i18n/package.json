@@ -1,0 +1,12 @@
+{
+  "name": "@nd/i18n",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@nd/core": "workspace:*"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "name": "@nd/bot",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun --watch run src/index.ts",
+    "start": "bun run src/index.ts"
+  },
+  "dependencies": {
+    "@nd/ai": "workspace:*",
+    "@nd/core": "workspace:*",
+    "@nd/db": "workspace:*",
+    "@nd/i18n": "workspace:*",
+    "@sapphire/framework": "^5.3.1",
+    "@sapphire/plugin-logger": "^4.0.2",
+    "discord.js": "^14.16.3"
+  }
+}

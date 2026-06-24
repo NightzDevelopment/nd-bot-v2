@@ -1,0 +1,27 @@
+node_modules/
+dist/
+build/
+*.log
+logs/
+
+# env / secrets (NEVER commit)
+.env
+.env.*
+!.env.example
+
+# data + db
+data/
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+*.db
+
+# editor / os
+.DS_Store
+.vscode/
+.idea/
+*.tsbuildinfo
+
+# web
+apps/web/dist/
+apps/web/.vite/

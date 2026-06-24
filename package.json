@@ -1,0 +1,28 @@
+{
+  "name": "nd-bot-v2",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "workspaces": ["apps/*", "packages/*"],
+  "engines": {
+    "bun": ">=1.1.0"
+  },
+  "scripts": {
+    "bot": "bun run --cwd apps/bot dev",
+    "bot:start": "bun run --cwd apps/bot start",
+    "web": "bun run --cwd apps/web dev",
+    "web:build": "bun run --cwd apps/web build",
+    "db:generate": "bun run --cwd packages/db generate",
+    "db:migrate": "bun run --cwd packages/db migrate",
+    "db:studio": "bun run --cwd packages/db studio",
+    "typecheck": "tsc --build",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "format": "biome format --write .",
+    "test": "bun test"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
+    "typescript": "^5.7.2"
+  }
+}
