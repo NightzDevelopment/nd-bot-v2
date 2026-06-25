@@ -1,0 +1,66 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ---- Sentinel base ------------------------------------------------------ */
+/* Technical / HUD aesthetic. Monospace throughout, sharp 4px corners, no
+   gradients, minimal padding. Colors mirror tailwind.config.js tokens. */
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    margin: 0;
+    background-color: #0d1117;
+    color: #ffffff;
+    font-family: '"Share Tech Mono"', ui-monospace, SFMono-Regular, monospace;
+    font-feature-settings: 'liga' 0;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    background-color: #3178c6;
+    color: #ffffff;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  /* Thin technical scrollbars. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #1e2a3a #0d1117;
+  }
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #0d1117;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #1e2a3a;
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #1c2e45;
+  }
+}
+
+@layer components {
+  /* Uppercase technical label used by section headers and field keys. */
+  .hud-label {
+    @apply text-[11px] uppercase tracking-[0.18em] text-sentinel-muted;
+  }
+}

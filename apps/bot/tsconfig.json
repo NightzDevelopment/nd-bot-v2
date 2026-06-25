@@ -1,11 +1,5 @@
 {
   "extends": "../../tsconfig.base.json",
-  "compilerOptions": { "rootDir": "src", "outDir": "dist" },
-  "include": ["src"],
-  "references": [
-    { "path": "../../packages/core" },
-    { "path": "../../packages/db" },
-    { "path": "../../packages/ai" },
-    { "path": "../../packages/i18n" }
-  ]
+  "compilerOptions": { "rootDir": "src" },
+  "include": ["src"]
 }

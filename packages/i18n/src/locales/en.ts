@@ -1,7 +1,142 @@
-/** English catalog (source of truth). Build phase adds per-feature keys. */
-export const en: Record<string, string> = {
+/**
+ * English catalog (source of truth). All other locales mirror this exact key set.
+ * Keys are grouped by feature: common, moderation, economy, levels, tickets,
+ * community, utility. Placeholders use {name} syntax and are interpolated by t().
+ *
+ * The exported type `Catalog` is derived from this object so that es.ts and fr.ts
+ * are checked against the same key set at compile time.
+ */
+export const en = {
+  // common
   'common.ok': 'Done.',
   'common.error': 'Something went wrong. Please try again.',
   'common.no_permission': 'You do not have permission to do that.',
   'common.guild_only': 'Use this in a server.',
-}
+  'common.dm_only': 'Use this in a direct message.',
+  'common.cooldown': 'Slow down. Try again in {seconds} seconds.',
+  'common.not_found': 'I could not find that.',
+  'common.cancelled': 'Cancelled.',
+  'common.confirm': 'Are you sure?',
+  'common.success': 'Success.',
+  'common.loading': 'Working on it.',
+  'common.member_not_found': 'That member is not in this server.',
+  'common.invalid_number': 'Please provide a valid number.',
+  'common.invalid_amount': 'Please provide a valid amount.',
+  'common.missing_argument': 'You are missing a required argument: {name}.',
+  'common.disabled': 'This feature is disabled on this server.',
+
+  // moderation
+  'moderation.warn.success': 'Warned {user}. Reason: {reason}',
+  'moderation.warn.success_dm': 'You were warned in {guild}. Reason: {reason}',
+  'moderation.warn.error': 'Could not warn that member.',
+  'moderation.warn.self': 'You cannot warn yourself.',
+  'moderation.warn.cleared': 'Cleared {count} warnings for {user}.',
+  'moderation.ban.success': 'Banned {user}. Reason: {reason}',
+  'moderation.ban.success_dm': 'You were banned from {guild}. Reason: {reason}',
+  'moderation.ban.error': 'Could not ban that member.',
+  'moderation.ban.self': 'You cannot ban yourself.',
+  'moderation.ban.already_banned': '{user} is already banned.',
+  'moderation.unban.success': 'Unbanned {user}.',
+  'moderation.unban.error': 'Could not unban that user.',
+  'moderation.unban.not_banned': '{user} is not banned.',
+  'moderation.kick.success': 'Kicked {user}. Reason: {reason}',
+  'moderation.kick.success_dm': 'You were kicked from {guild}. Reason: {reason}',
+  'moderation.kick.error': 'Could not kick that member.',
+  'moderation.kick.self': 'You cannot kick yourself.',
+  'moderation.mute.success': 'Muted {user} for {duration}. Reason: {reason}',
+  'moderation.mute.success_dm': 'You were muted in {guild} for {duration}. Reason: {reason}',
+  'moderation.mute.error': 'Could not mute that member.',
+  'moderation.mute.self': 'You cannot mute yourself.',
+  'moderation.mute.already_muted': '{user} is already muted.',
+  'moderation.unmute.success': 'Unmuted {user}.',
+  'moderation.unmute.error': 'Could not unmute that member.',
+  'moderation.unmute.not_muted': '{user} is not muted.',
+  'moderation.timeout.success': 'Timed out {user} for {duration}. Reason: {reason}',
+  'moderation.timeout.error': 'Could not time out that member.',
+  'moderation.hierarchy': 'You cannot moderate someone with a role equal to or higher than yours.',
+  'moderation.bot_hierarchy': 'I cannot moderate that member. Their role is higher than mine.',
+  'moderation.case_logged': 'Logged as case number {case}.',
+  'moderation.reason_default': 'No reason provided.',
+
+  // economy
+  'economy.balance.self': 'You have {wallet} in your wallet and {bank} in the bank.',
+  'economy.balance.other': '{user} has {wallet} in their wallet and {bank} in the bank.',
+  'economy.daily.success': 'You claimed your daily reward of {amount}. Come back tomorrow.',
+  'economy.daily.streak': 'You claimed {amount}. Daily streak: {streak} days.',
+  'economy.daily.already_claimed': 'You already claimed your daily reward. Try again in {time}.',
+  'economy.insufficient_funds': 'You do not have enough. You need {amount} more.',
+  'economy.insufficient_bank': 'You do not have that much in the bank.',
+  'economy.deposit.success': 'Deposited {amount} into the bank.',
+  'economy.withdraw.success': 'Withdrew {amount} from the bank.',
+  'economy.pay.success': 'You paid {amount} to {user}.',
+  'economy.pay.received': '{user} paid you {amount}.',
+  'economy.pay.self': 'You cannot pay yourself.',
+  'economy.work.success': 'You worked and earned {amount}.',
+  'economy.work.cooldown': 'You are too tired to work. Try again in {time}.',
+  'economy.crime.success': 'Your crime paid off. You gained {amount}.',
+  'economy.crime.fail': 'Your crime failed. You lost {amount}.',
+  'economy.crime.cooldown': 'Lay low for a while. Try again in {time}.',
+  'economy.shop.bought': 'You bought {item} for {amount}.',
+  'economy.shop.sold': 'You sold {item} for {amount}.',
+  'economy.shop.not_found': 'That item is not in the shop.',
+  'economy.currency_name': 'coins',
+
+  // levels
+  'levels.level_up': 'Congratulations {user}, you reached level {level}.',
+  'levels.level_up_role': 'You earned the {role} role for reaching level {level}.',
+  'levels.rank.self': 'You are level {level} with {xp} XP. Rank {rank} of {total}.',
+  'levels.rank.other': '{user} is level {level} with {xp} XP. Rank {rank} of {total}.',
+  'levels.leaderboard.title': 'Top members by level',
+  'levels.leaderboard.empty': 'No one has earned any XP yet.',
+  'levels.leaderboard.row': '{rank}. {user} level {level} ({xp} XP)',
+  'levels.xp_given': 'Gave {amount} XP to {user}.',
+  'levels.xp_taken': 'Removed {amount} XP from {user}.',
+  'levels.reset.success': 'Reset levels for {user}.',
+
+  // tickets
+  'tickets.opened': 'Ticket opened. {channel}',
+  'tickets.opened_log': '{user} opened a ticket: {subject}',
+  'tickets.already_open': 'You already have an open ticket: {channel}',
+  'tickets.closed': 'Ticket closed by {user}.',
+  'tickets.closed_log': 'Ticket {ticket} closed by {user}.',
+  'tickets.claimed': 'Ticket claimed by {user}.',
+  'tickets.already_claimed': 'This ticket is already claimed by {user}.',
+  'tickets.unclaimed': 'Ticket released by {user}.',
+  'tickets.not_a_ticket': 'This channel is not a ticket.',
+  'tickets.no_permission': 'You cannot manage this ticket.',
+  'tickets.transcript_saved': 'Transcript saved.',
+  'tickets.limit_reached': 'You have reached the maximum number of open tickets.',
+  'tickets.category_full': 'The ticket category is full. Please try again later.',
+
+  // community
+  'community.poll.created': 'Poll created: {question}',
+  'community.poll.closed': 'Poll closed. Winner: {option} with {votes} votes.',
+  'community.poll.no_votes': 'The poll closed with no votes.',
+  'community.poll.too_few_options': 'A poll needs at least two options.',
+  'community.giveaway.created': 'Giveaway started for {prize}. Ends {time}.',
+  'community.giveaway.ended': 'Giveaway for {prize} has ended.',
+  'community.giveaway.winner': 'Congratulations {user}, you won {prize}.',
+  'community.giveaway.no_entries': 'The giveaway ended with no entries.',
+  'community.giveaway.rerolled': 'New winner for {prize}: {user}.',
+  'community.suggestion.created': 'Suggestion submitted as number {id}.',
+  'community.suggestion.approved': 'Suggestion {id} was approved.',
+  'community.suggestion.denied': 'Suggestion {id} was denied.',
+  'community.counter.updated': '{name} is now {count}.',
+
+  // utility
+  'utility.reminder.set': 'Reminder set. I will remind you in {time}.',
+  'utility.reminder.fired': 'Reminder: {message}',
+  'utility.reminder.cancelled': 'Reminder cancelled.',
+  'utility.reminder.none': 'You have no active reminders.',
+  'utility.reaction_role.added': 'Reaction role added: react with {emoji} to get {role}.',
+  'utility.reaction_role.removed': 'Reaction role removed.',
+  'utility.welcome.default': 'Welcome to {guild}, {user}.',
+  'utility.goodbye.default': '{user} has left the server.',
+  'utility.serverinfo.title': 'Server information for {guild}',
+  'utility.userinfo.title': 'User information for {user}',
+  'utility.afk.set': 'You are now AFK: {reason}',
+  'utility.afk.back': 'Welcome back. I removed your AFK.',
+} as const
+
+/** Canonical key set. Other locales must provide exactly these keys. */
+export type Catalog = Record<keyof typeof en, string>

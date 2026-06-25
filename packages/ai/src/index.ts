@@ -44,10 +44,27 @@ export interface AgentOptions extends GenerateOptions {
   maxIterations?: number
 }
 
-// Implemented in the build phase:
-// export function getRouter(): { generate(opts): Promise<GenerateResult> }
-// export function runAgent(opts: AgentOptions): Promise<GenerateResult>
-// export async function retrieve(query: string, k?: number): Promise<KnowledgeDoc[]>
-// export async function remember(userId, role, content): Promise<void>
+// ---- Implementations ------------------------------------------------------
+
+export { getRouter, routeIntent, type Router } from './router.ts'
+export { runAgent, type AgentResult } from './agent.ts'
+export {
+  retrieve,
+  type KnowledgeDoc,
+  type RetrieveOptions,
+  type ScoredDoc,
+} from './rag.ts'
+export {
+  remember,
+  recall,
+  recallForGuild,
+  type MemoryRole,
+  type MemoryTurn,
+  type RememberOptions,
+} from './memory.ts'
+export { geminiProvider } from './providers/gemini.ts'
+export { claudeProvider } from './providers/claude.ts'
+export { clearCache, cacheKey } from './cache.ts'
+export { recordTelemetry, type TelemetryRecord } from './telemetry.ts'
 
 export const AI_SCAFFOLD = true
