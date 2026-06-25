@@ -17,8 +17,18 @@
  *
  * Wire up: `startApiServer()` is called from `index.ts` after the client logs in.
  */
-import { type Logger, type Env, loadEnv, createLogger, parseIdSet } from '@nd/core'
+import { type Logger, type Env, loadEnv, createLogger } from '@nd/core'
 import type { Server, ServerWebSocket } from 'bun'
+import {
+  buildAuthorizeUrl,
+  createOauthState,
+  exchangeCodeForUser,
+  isAdminDiscordUser,
+  resolveJwtSecret,
+  signJwt,
+  verifyJwt,
+  verifyOauthState,
+} from './auth.ts'
 
 // ---- Types ----------------------------------------------------------------
 
@@ -192,79 +202,142 @@ export class WebSocketHub {
   }
 }
 
-// ---- Auth middleware (SKELETON) -------------------------------------------
+// ---- Auth middleware ------------------------------------------------------
+
+const UNAUTHENTICATED: AuthContext = { userId: null, isAdmin: false, roleIds: [] }
+
+/** Read the bearer token from the Authorization header, or null. */
+function readBearer(req: Request): string | null {
+  const header = req.headers.get('authorization')
+  if (!header) return null
+  return header.toLowerCase().startsWith('bearer ') ? header.slice(7).trim() || null : null
+}
 
 /**
  * Resolve the auth context for a request.
  *
- * SKELETON. The full flow is:
- *   1. Read the `Authorization: Bearer <jwt>` header (or a signed cookie).
- *   2. Verify the JWT with DASHBOARD_JWT_SECRET (HS256). Reject on failure.
- *   3. Map the verified `sub` claim to a Discord user id and pull `roleIds`
- *      from the claims minted at OAuth login time.
- *   4. The OAuth login route (TODO, see `registerAuthRoutes`) exchanges a
- *      Discord OAuth `code` for a token, fetches the user + guild member, then
- *      mints the JWT above.
+ * The token is a JWT minted by the OAuth callback. We accept it from the
+ * `Authorization: Bearer <jwt>` header, and (for the `/ws` upgrade, where custom
+ * headers cannot be set from the browser) from a `?token=` query param. The JWT
+ * is verified with the resolved secret (HS256, timing-safe, expiry enforced).
  *
- * Until that is implemented this returns an unauthenticated context, except in
- * development where, if no secret is configured, it grants admin so the
- * dashboard can be built against live data. NEVER ship that branch enabled.
+ * The token already carries the admin decision made at login time, so a valid
+ * token yields `{ userId, isAdmin, roleIds }` directly.
  */
 async function resolveAuth(req: Request, env: Env): Promise<AuthContext> {
-  const adminUserIds = parseIdSet(env.DASHBOARD_ADMIN_USER_IDS)
-  const adminRoleIds = parseIdSet(env.DASHBOARD_ADMIN_ROLE_IDS)
+  const url = new URL(req.url)
+  const token = readBearer(req) ?? url.searchParams.get('token')
 
-  const header = req.headers.get('authorization')
-  const token = header?.toLowerCase().startsWith('bearer ') ? header.slice(7).trim() : null
-
-  // TODO(phase-5): verify `token` as a JWT signed with env.DASHBOARD_JWT_SECRET,
-  // extract { sub, roleIds } from the claims, and build the context from them.
-  if (token && env.DASHBOARD_JWT_SECRET) {
-    // const claims = await verifyJwt(token, env.DASHBOARD_JWT_SECRET)
-    // const roleIds = claims.roleIds ?? []
-    // return { userId: claims.sub, isAdmin: isAdmin(claims.sub, roleIds), roleIds }
-  }
-
-  // Development convenience: no secret configured means auth is not wired yet.
+  // Dev-only bypass: ONLY when not in production AND no JWT secret is configured,
+  // grant admin so the dashboard can be built against live data without OAuth.
+  // In production an invalid/absent token is always unauthenticated.
   if (env.NODE_ENV !== 'production' && !env.DASHBOARD_JWT_SECRET) {
     return { userId: 'dev', isAdmin: true, roleIds: [] }
   }
 
-  void adminUserIds
-  void adminRoleIds
-  return { userId: null, isAdmin: false, roleIds: [] }
+  if (!token) return UNAUTHENTICATED
+
+  const claims = verifyJwt(token, resolveJwtSecret(env))
+  if (!claims) return UNAUTHENTICATED
+
+  return { userId: claims.sub, isAdmin: claims.isAdmin, roleIds: claims.roleIds }
+}
+
+/** Name of the short-lived httpOnly cookie holding the signed OAuth state. */
+const OAUTH_STATE_COOKIE = 'nd_oauth_state'
+/** Session lifetime for minted dashboard JWTs (7 days). */
+const SESSION_TTL_SECONDS = 7 * 24 * 60 * 60
+
+/** Build a 302 redirect, optionally setting/clearing a Set-Cookie header. */
+function redirect(location: string, setCookie?: string): Response {
+  const headers: Record<string, string> = { location }
+  if (setCookie) headers['set-cookie'] = setCookie
+  return new Response(null, { status: 302, headers })
+}
+
+/** Read a single cookie value from the request Cookie header. */
+function readCookie(req: Request, name: string): string | null {
+  const raw = req.headers.get('cookie')
+  if (!raw) return null
+  for (const pair of raw.split(';')) {
+    const idx = pair.indexOf('=')
+    if (idx === -1) continue
+    if (pair.slice(0, idx).trim() === name) return pair.slice(idx + 1).trim()
+  }
+  return null
+}
+
+/** The SPA origin used for post-login redirects. Falls back to '/'. */
+function spaBase(env: Env): string {
+  return (env.DASHBOARD_PUBLIC_URL ?? '').replace(/\/+$/, '') || ''
 }
 
 /**
- * Register the Discord OAuth + JWT auth routes.
+ * Register the Discord OAuth2 + JWT auth routes.
  *
- * SKELETON. Adds the endpoints the dashboard login flow needs. Bodies are TODOs
- * so the surface is stable for Phase 5 to fill in.
+ *   GET  /api/auth/login    -> 302 to Discord's consent screen with a signed
+ *                              state stored in a short-lived httpOnly cookie.
+ *   GET  /api/auth/callback -> validate state, exchange the code, run the admin
+ *                              check, mint a JWT, and 302 back to the SPA with
+ *                              `#token=<jwt>` (or `?error=not_authorized`).
+ *   GET  /api/auth/me       -> the current principal.
+ *   POST /api/auth/logout   -> acknowledge (the SPA clears its stored token).
  */
 export function registerAuthRoutes(router: ApiRouter, env: Env): void {
+  const logger = createLogger('auth')
+
   // Step 1: redirect the browser to Discord's OAuth consent screen.
-  router.get('/api/auth/login', ({ url }) => {
-    // TODO(phase-5): build the Discord authorize URL with DISCORD_OAUTH_CLIENT_ID,
-    // a `redirect_uri` derived from DASHBOARD_PUBLIC_URL, scope `identify guilds`,
-    // and a signed `state` to defend against CSRF, then 302 to it.
-    void url
-    void env
-    return problem(501, 'oauth login not implemented')
+  router.get('/api/auth/login', () => {
+    if (!env.DISCORD_OAUTH_CLIENT_ID || !env.DASHBOARD_PUBLIC_URL) {
+      return problem(500, 'oauth is not configured')
+    }
+    const secret = resolveJwtSecret(env)
+    const state = createOauthState(secret)
+    const cookie =
+      `${OAUTH_STATE_COOKIE}=${state}; Path=/; HttpOnly; SameSite=Lax; Max-Age=600` +
+      (env.NODE_ENV === 'production' ? '; Secure' : '')
+    return redirect(buildAuthorizeUrl(env, state), cookie)
   })
 
   // Step 2: Discord redirects back here with `?code=...&state=...`.
-  router.get('/api/auth/callback', ({ url }) => {
-    // TODO(phase-5): validate `state`, exchange `code` for an access token with
-    // DISCORD_OAUTH_CLIENT_SECRET, fetch the user + guild member, then mint a
-    // JWT (HS256, DASHBOARD_JWT_SECRET) and set it as a secure http only cookie.
-    void url
-    return problem(501, 'oauth callback not implemented')
+  router.get('/api/auth/callback', async ({ req, url }) => {
+    const base = spaBase(env)
+    const clearCookie = `${OAUTH_STATE_COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`
+
+    const code = url.searchParams.get('code')
+    const state = url.searchParams.get('state')
+    const cookieState = readCookie(req, OAUTH_STATE_COOKIE)
+    const secret = resolveJwtSecret(env)
+
+    // CSRF: the state must be present, match the cookie, and verify its signature.
+    if (!code || !state || !cookieState || state !== cookieState || !verifyOauthState(state, secret)) {
+      logger.warn('oauth callback rejected: state mismatch or missing code')
+      return redirect(`${base}/?error=not_authorized`, clearCookie)
+    }
+
+    const exchanged = await exchangeCodeForUser(env, code)
+    if (!exchanged) {
+      return redirect(`${base}/?error=not_authorized`, clearCookie)
+    }
+
+    const admin = await isAdminDiscordUser(exchanged.user.id, env)
+    if (!admin.isAdmin) {
+      logger.info({ userId: exchanged.user.id }, 'non-admin attempted dashboard login')
+      return redirect(`${base}/?error=not_authorized`, clearCookie)
+    }
+
+    const jwt = signJwt(
+      { sub: exchanged.user.id, roleIds: admin.roleIds, isAdmin: true },
+      secret,
+      SESSION_TTL_SECONDS,
+    )
+    return redirect(`${base}/#token=${encodeURIComponent(jwt)}`, clearCookie)
   })
 
   // Return the current principal so the SPA can render the right shell.
   router.get('/api/auth/me', ({ auth }) => json({ auth }))
 
-  // Clear the session cookie.
+  // The SPA owns the token (localStorage); acknowledge so logout has a hook.
   router.post('/api/auth/logout', () => json({ ok: true }))
 }
 
