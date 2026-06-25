@@ -15,6 +15,7 @@ import { container, SapphireClient } from '@sapphire/framework'
 import { GatewayIntentBits, Partials } from 'discord.js'
 import { ConfigService } from './lib/config.ts'
 import { startApiServer } from './api/server.ts'
+import { registerDashboardApi } from './api/dashboard.ts'
 import { setupFeatures } from './features/registry.ts'
 
 const log = createLogger('bot')
@@ -50,6 +51,8 @@ async function main() {
     // Wire feature API routes, background loops, and services now that the
     // client and API server are live.
     setupFeatures()
+    // Register the cross-cutting dashboard read endpoints no feature owns.
+    if (container.api) registerDashboardApi(container.api.router, client)
   } catch (err) {
     log.fatal({ err }, 'startup failed')
     process.exit(1)

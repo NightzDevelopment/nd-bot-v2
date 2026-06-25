@@ -1,7 +1,7 @@
 import { Route, Routes } from 'react-router-dom'
 import { DashboardLayout } from './components/layout/DashboardLayout'
 import { NAV_SECTIONS } from './nav'
-import { Overview } from './pages/Overview'
+import Overview from './pages/Overview'
 import { NotFound } from './pages/NotFound'
 import { SECTION_PAGES } from './pages/sections'
 
