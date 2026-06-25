@@ -15,6 +15,7 @@ import { container, SapphireClient } from '@sapphire/framework'
 import { GatewayIntentBits, Partials } from 'discord.js'
 import { ConfigService } from './lib/config.ts'
 import { startApiServer } from './api/server.ts'
+import { setupFeatures } from './features/registry.ts'
 
 const log = createLogger('bot')
 const env = loadEnv()
@@ -46,6 +47,9 @@ async function main() {
     // Start the dashboard API only after the gateway is up so /health and WS
     // broadcasts reflect a live client.
     container.api = startApiServer({ env })
+    // Wire feature API routes, background loops, and services now that the
+    // client and API server are live.
+    setupFeatures()
   } catch (err) {
     log.fatal({ err }, 'startup failed')
     process.exit(1)
