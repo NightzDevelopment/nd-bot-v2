@@ -17,6 +17,11 @@ SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 REPO_DIR=$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)
 cd "$REPO_DIR"
 
+# A detached screen session may not inherit an interactive shell's PATH, so make
+# sure bun (installed to ~/.bun/bin) is reachable here.
+export BUN_INSTALL="${BUN_INSTALL:-$HOME/.bun}"
+export PATH="$BUN_INSTALL/bin:$PATH"
+
 mkdir -p logs
 
 LOG_FILE="logs/bot.log"

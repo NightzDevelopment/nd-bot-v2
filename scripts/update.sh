@@ -12,6 +12,10 @@ SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 REPO_DIR=$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)
 cd "$REPO_DIR"
 
+# Ensure bun is reachable when run from cron or a non-login shell.
+export BUN_INSTALL="${BUN_INSTALL:-$HOME/.bun}"
+export PATH="$BUN_INSTALL/bin:$PATH"
+
 echo "[update.sh] repo: ${REPO_DIR}"
 
 echo "[update.sh] git pull"

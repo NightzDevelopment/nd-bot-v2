@@ -2,13 +2,13 @@
 # ============================================================
 # nd-bot-v2 one-time VPS setup.
 #
-# Run this ONCE when first deploying v2 alongside v1. It is mostly a documented,
-# guarded walkthrough: it clones (if needed), installs deps, prepares .env, runs
+# Run this ONCE on a fresh Ubuntu VPS. It is a guarded walkthrough: it installs
+# prerequisites (step 0), clones (if needed), installs deps, prepares .env, runs
 # migrations, builds the web SPA, installs the NGINX site, and prints the
 # certbot command. Re-running is safe; existing steps are skipped or are
 # idempotent.
 #
-# Prereqs already on the VPS (shared with v1):
+# Step 0 installs these automatically if missing (skip this list, it is FYI):
 #   - bun (>= 1.1)         curl -fsSL https://bun.sh/install | bash
 #   - screen               sudo apt-get install -y screen
 #   - nginx                sudo apt-get install -y nginx
@@ -21,11 +21,25 @@
 set -e
 
 REPO_DIR="/opt/nd-bot-v2"
-REPO_URL="https://github.com/nightz-dev/nd-bot-v2.git"   # adjust to the real remote
+REPO_URL="https://github.com/NightzDevelopment/nd-bot-v2.git"
 SCREEN_NAME="nd-bot-v2"
 SITE="botv2.nightz.dev"
 
 echo "[setup-vps.sh] target repo dir: ${REPO_DIR}"
+
+# 0. Install prerequisites on a fresh Ubuntu VPS (idempotent; skipped if present).
+if ! command -v git >/dev/null 2>&1 || ! command -v nginx >/dev/null 2>&1 || ! command -v screen >/dev/null 2>&1; then
+    echo "[setup-vps.sh] installing system packages (git, curl, screen, nginx, certbot)"
+    sudo apt-get update
+    sudo apt-get install -y git curl screen nginx certbot python3-certbot-nginx
+fi
+if ! command -v bun >/dev/null 2>&1; then
+    echo "[setup-vps.sh] installing bun"
+    curl -fsSL https://bun.sh/install | bash
+fi
+# Make bun available to the rest of this script even right after first install.
+export BUN_INSTALL="${BUN_INSTALL:-$HOME/.bun}"
+export PATH="$BUN_INSTALL/bin:$PATH"
 
 # 1. Clone (if not already present). If you already cloned manually, skip.
 if [ ! -d "${REPO_DIR}/.git" ]; then

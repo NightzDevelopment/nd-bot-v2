@@ -61,7 +61,7 @@ Use a separate directory from v1. The NGINX file and scripts assume
 ```sh
 sudo mkdir -p /opt/nd-bot-v2
 sudo chown "$USER":"$USER" /opt/nd-bot-v2
-git clone <repo-url> /opt/nd-bot-v2
+git clone https://github.com/NightzDevelopment/nd-bot-v2.git /opt/nd-bot-v2
 cd /opt/nd-bot-v2
 ```
 
