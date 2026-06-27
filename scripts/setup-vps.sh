@@ -28,10 +28,11 @@ SITE="botv2.nightz.dev"
 echo "[setup-vps.sh] target repo dir: ${REPO_DIR}"
 
 # 0. Install prerequisites on a fresh Ubuntu VPS (idempotent; skipped if present).
-if ! command -v git >/dev/null 2>&1 || ! command -v nginx >/dev/null 2>&1 || ! command -v screen >/dev/null 2>&1; then
-    echo "[setup-vps.sh] installing system packages (git, curl, screen, nginx, certbot)"
+# unzip is required by the bun installer, so it must be present before bun.
+if ! command -v git >/dev/null 2>&1 || ! command -v nginx >/dev/null 2>&1 || ! command -v screen >/dev/null 2>&1 || ! command -v unzip >/dev/null 2>&1; then
+    echo "[setup-vps.sh] installing system packages (git, curl, unzip, screen, nginx, certbot)"
     sudo apt-get update
-    sudo apt-get install -y git curl screen nginx certbot python3-certbot-nginx
+    sudo apt-get install -y git curl unzip screen nginx certbot python3-certbot-nginx
 fi
 if ! command -v bun >/dev/null 2>&1; then
     echo "[setup-vps.sh] installing bun"
