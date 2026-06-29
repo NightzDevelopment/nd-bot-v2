@@ -367,9 +367,10 @@ export function startApiServer(options: StartApiOptions = {}): ApiServer {
   const hub = new WebSocketHub(logger)
 
   // Built in routes.
-  router.get('/health', () =>
-    json({ status: 'ok', uptime: Math.round(process.uptime()), connections: hub.connectionCount }),
-  )
+  const healthHandler = () =>
+    json({ status: 'ok', uptime: Math.round(process.uptime()), connections: hub.connectionCount })
+  router.get('/health', healthHandler)
+  router.get('/api/health', healthHandler)
   registerAuthRoutes(router, env)
   options.configureRoutes?.(router)
 

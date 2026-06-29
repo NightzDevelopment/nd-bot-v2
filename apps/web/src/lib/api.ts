@@ -44,7 +44,7 @@ export interface RequestOptions {
   query?: Record<string, string | number | boolean | undefined>
 }
 
-const API_BASE = '/api'
+const API_BASE = ''
 
 function buildUrl(path: string, query?: RequestOptions['query']): string {
   const normalized = path.startsWith('/') ? path : `/${path}`

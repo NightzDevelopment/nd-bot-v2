@@ -128,7 +128,7 @@ export default function OverviewPage() {
 
     Promise.all([
       api.get<Overview>(`/api/guilds/${guildId}/overview`, undefined, controller.signal),
-      api.get<Health>('/health', undefined, controller.signal),
+      api.get<Health>('/api/health', undefined, controller.signal),
       api.get<AuditResponse>(
         `/api/guilds/${guildId}/audit`,
         { limit: 8 },
