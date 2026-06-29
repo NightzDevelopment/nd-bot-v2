@@ -9,7 +9,7 @@
  * role when members react. Bindings live in the `reactionRoles` table keyed by
  * (guildId, messageId, emoji). Restricted to members who can manage roles.
  */
-import { Command, container } from '@sapphire/framework'
+import { Args, Command, container } from '@sapphire/framework'
 import { and, eq } from 'drizzle-orm'
 import {
   type Message,
@@ -99,11 +99,49 @@ export class ReactionRoleCommand extends Command {
     await interaction.reply({ embeds: [await this.list(guildId)], ephemeral: true })
   }
 
-  public override async messageRun(message: Message): Promise<void> {
-    // Slash only: reaction roles need precise ids and emoji, so direct users there.
-    await message.reply({
-      embeds: [brandEmbed({ tone: 'neutral', title: 'Reaction roles', description: 'Use /reactionrole to manage bindings.' })],
-    })
+  public override async messageRun(message: Message, args: Args): Promise<void> {
+    if (!message.inGuild()) {
+      await message.reply({ embeds: [errorEmbed('Reaction roles', t('en', 'common.guild_only'))] })
+      return
+    }
+    if (!message.member?.permissions.has(PermissionFlagsBits.ManageRoles)) {
+      const locale = await container.config.getLocale(message.guildId)
+      await message.reply({ embeds: [errorEmbed('Reaction roles', t(locale, 'common.no_permission'))] })
+      return
+    }
+
+    const guildId = message.guildId
+    const locale = await container.config.getLocale(guildId)
+    const sub = (await args.pickResult('string')).unwrapOr('list').toLowerCase()
+
+    if (sub === 'add') {
+      const messageId = (await args.pickResult('string')).unwrapOr('')
+      const emoji = (await args.pickResult('string')).unwrapOr('')
+      const roleResult = await args.pickResult('role')
+      if (!messageId || !emoji || !roleResult.isOk()) {
+        await message.reply({
+          embeds: [brandEmbed({ tone: 'neutral', title: 'Reaction roles', description: 'Usage: `nd!reactionrole add <message_id> <emoji> <@role>`' })],
+        })
+        return
+      }
+      await message.reply({ embeds: [await this.add(locale, guildId, messageId, emoji, roleResult.unwrap() as Role)] })
+      return
+    }
+
+    if (sub === 'remove') {
+      const messageId = (await args.pickResult('string')).unwrapOr('')
+      const emoji = (await args.pickResult('string')).unwrapOr('')
+      if (!messageId || !emoji) {
+        await message.reply({
+          embeds: [brandEmbed({ tone: 'neutral', title: 'Reaction roles', description: 'Usage: `nd!reactionrole remove <message_id> <emoji>`' })],
+        })
+        return
+      }
+      await message.reply({ embeds: [await this.remove(locale, guildId, messageId, emoji)] })
+      return
+    }
+
+    await message.reply({ embeds: [await this.list(guildId)] })
   }
 
   private async add(locale: Locale, guildId: string, messageId: string, emoji: string, role: Role) {
