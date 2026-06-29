@@ -34,12 +34,22 @@ export class TicketInteractionListener extends Listener<typeof Events.Interactio
   }
 
   public override async run(interaction: Interaction): Promise<void> {
-    if (interaction.isButton() && isTicketCustomId(interaction.customId)) {
-      await this.handleButton(interaction)
-      return
-    }
-    if (interaction.isStringSelectMenu() && interaction.customId === CUSTOM_ID.categorySelect) {
-      await this.handleCategorySelect(interaction)
+    try {
+      if (interaction.isButton() && isTicketCustomId(interaction.customId)) {
+        await this.handleButton(interaction)
+        return
+      }
+      if (interaction.isStringSelectMenu() && interaction.customId === CUSTOM_ID.categorySelect) {
+        await this.handleCategorySelect(interaction)
+      }
+    } catch (err) {
+      this.container.logger.error(err, 'ticket interaction threw')
+      const reply = { embeds: [errorEmbed('Something went wrong. Please try again.')], ephemeral: true as const }
+      if ('replied' in interaction && (interaction.replied || interaction.deferred)) {
+        await (interaction as ButtonInteraction).editReply(reply).catch(() => undefined)
+      } else if ('reply' in interaction) {
+        await (interaction as ButtonInteraction).reply(reply).catch(() => undefined)
+      }
     }
   }
 
@@ -95,21 +105,22 @@ export class TicketInteractionListener extends Listener<typeof Events.Interactio
   private async handleClaim(interaction: ButtonInteraction): Promise<void> {
     const guildId = interaction.guildId
     if (!guildId) return
-    const locale = await container.config.getLocale(guildId)
     if (!this.isStaff(interaction)) {
-      await interaction.reply({ embeds: [errorEmbed(t(locale, 'tickets.no_permission'))], ephemeral: true })
+      await interaction.reply({ embeds: [errorEmbed('You need Manage Messages to claim tickets.')], ephemeral: true })
       return
     }
+    await interaction.deferReply({ ephemeral: true })
+    const locale = await container.config.getLocale(guildId)
     const result = await container.tickets.claim(interaction.channelId, interaction.user.id)
     if (!result.ok) {
       const message =
         result.reason === 'already_claimed'
           ? t(locale, 'tickets.already_claimed', { user: result.claimedBy ? `<@${result.claimedBy}>` : 'someone' })
           : t(locale, 'tickets.not_a_ticket')
-      await interaction.reply({ embeds: [warningEmbed('Ticket', message)], ephemeral: true })
+      await interaction.editReply({ embeds: [warningEmbed('Ticket', message)] })
       return
     }
-    await interaction.reply({
+    await interaction.editReply({
       embeds: [successEmbed('Ticket', t(locale, 'tickets.claimed', { user: interaction.user.toString() }))],
     })
   }
